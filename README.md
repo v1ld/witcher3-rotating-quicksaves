@@ -53,6 +53,26 @@ Each produces `RotatingQuicksaves.asi`. Without `make` the whole build is one co
 x86_64-w64-mingw32-gcc -O2 -Wall -Wextra -shared -s -static-libgcc -o RotatingQuicksaves.asi src/RotatingQuicksaves.c
 ```
 
+## Using it in your own mod
+
+The plugin does not depend on the Rotating Quicksaves script; any script mod can drive it. Two things are needed:
+
+1. **Switch it on.** Call `theGame.GetNumSaveSlots(SGT_ForcedCheckPoint)` once, for example when a game loads. A value between 31000 and 32000 means the plugin is active (31100 for 1.0.0); `-1` means it is not installed, and `30000 + reason` means it switched itself off (see above). From that call on, quicksaves no longer replace each other.
+2. **Delete old quicksaves yourself.** The plugin never deletes anything, so without pruning the quicksaves pile up. After a quicksave finishes, list the saves and delete the ones you don't want:
+
+```
+var saves : array< SSavegameInfo >;
+var i : int;
+theGame.ListSavedGames(saves);
+for (i = 0; i < saves.Size(); i += 1)
+{
+	if (saves[i].slotType == SGT_QuickSave && /* your rule */)
+		theGame.DeleteSavedGame(saves[i]);
+}
+```
+
+The Rotating Quicksaves script (on Nexus Mods) is a complete example: it hooks the save started/completed events, keeps its own play-time stamps per quicksave, and applies its keep rule there.
+
 ## Installing
 
 1. Install an ASI loader in `The Witcher 3/bin/x64_dx12/`: [Ultimate ASI Loader for The Witcher 3](https://www.nexusmods.com/witcher3/mods/13671) (Vortex-ready, `winmm.dll`), or any [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) variant. On Linux/Proton, add the launch option for the DLL name you use, for example `WINEDLLOVERRIDES="winmm=n,b" %command%`.
